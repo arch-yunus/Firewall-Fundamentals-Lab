@@ -16,6 +16,8 @@ Bu depo, ağ güvenliğinin temel taşı olan **Güvenlik Duvarı (Firewall)** t
 * [Pratik Senaryolar & Iptables](#pratik-senaryolar)
 * [Lab: Uygulamalı Senaryo (Host-Based)](#lab-uygulamalı-senaryo)
 * [Lab: Docker Ortamı (Network-Based)](#lab-docker-ortamı)
+* [İleri Seviye Konseptler (NAT & DOS)](#i̇leri-seviye-konseptler)
+* [Modern Alternatif: NFTables](#modern-alternatif-nftables)
 
 ---
 
@@ -122,6 +124,45 @@ docker-compose up -d
    docker exec -it lab-firewall iptables -A FORWARD -s 10.0.2.10 -d 10.0.1.10 -j DROP
    ```
 3. **Tekrar test edin (Erişim engellenmiş olmalı).**
+
+---
+
+## 🛰️ İleri Seviye Konseptler
+
+Lab ortamındaki `lab/advanced` dizininde bulunan betikler ile daha karmaşık senaryoları test edebilirsiniz.
+
+### NAT (Network Address Translation)
+İç ağdaki cihazların dış dünyaya erişimini sağlar. 
+- **Setup:** `bash lab/advanced/nat_setup.sh`
+
+### DOS Koruması (Rate Limiting)
+Belirli bir IP'den gelen paket sayısını sınırlayarak basit saldırıları engeller.
+- **Setup:** `bash lab/advanced/dos_protection.sh`
+
+---
+
+## 🛠️ Modern Alternatif: NFTables
+
+`iptables` yerini alan `nftables`, daha performanslı ve temiz bir sözdizimi sunar. 
+
+### Iptables vs. NFTables Karşılaştırması
+
+| Özellik | Iptables | NFTables |
+| :--- | :--- | :--- |
+| **Sözdizimi** | Sabit / Karmaşık | Esnek / Hiyerarşik |
+| **Performans** | Orta (Zincir tabanlı) | Yüksek (VM tabanlı) |
+| **Güncelleme** | Atomik değil | Tam atomik kural güncellemeleri |
+
+**NFTables Örnek Kurallar:** `lab/nftables/rules.nft`
+
+---
+
+## 🧪 Otomatik Doğrulama
+
+Kurallarınızın doğru çalışıp çalışmadığını test etmek için doğrulama betiğini kullanın:
+```bash
+docker exec -it lab-client sh /lab/scripts/validate.sh
+```
 
 ---
 
