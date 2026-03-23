@@ -108,22 +108,18 @@ Daha gelişmiş ve izole bir test ortamı için Docker Compose topolojisini kull
 - **Firewall (10.0.2.1 / 10.0.1.1):** Geçit (Gateway).
 - **Server (10.0.1.10):** İç ağdaki hedef web sunucusu.
 
-### Başlatma
+### Başlatma ve Yönetim
+Lab ortamını yönetmek için kök dizindeki `lab/labctl.sh` aracını kullanın:
+
 ```bash
 cd lab
-docker-compose up -d
-```
+chmod +x labctl.sh
 
-### Test Örneği: Bağlantı Engelleme
-1. **İstemciden sunucuya erişimi test edin:**
-   ```bash
-   docker exec -it lab-client curl 10.0.1.10
-   ```
-2. **Güvenlik duvarında trafiği engelleyin:**
-   ```bash
-   docker exec -it lab-firewall iptables -A FORWARD -s 10.0.2.10 -d 10.0.1.10 -j DROP
-   ```
-3. **Tekrar test edin (Erişim engellenmiş olmalı).**
+./labctl.sh up      # Lab'ı başlat
+./labctl.sh test    # Testleri çalıştır
+./labctl.sh status  # Durumu kontrol et
+./labctl.sh apply nat  # NAT senaryosunu uygula
+```
 
 ---
 
@@ -159,9 +155,10 @@ Belirli bir IP'den gelen paket sayısını sınırlayarak basit saldırıları e
 
 ## 🧪 Otomatik Doğrulama
 
-Kurallarınızın doğru çalışıp çalışmadığını test etmek için doğrulama betiğini kullanın:
+Kurallarınızın doğru çalışıp çalışmadığını test etmek için merkezi aracı kullanın:
 ```bash
-docker exec -it lab-client sh /lab/scripts/validate.sh
+cd lab
+./labctl.sh test
 ```
 
 ---
