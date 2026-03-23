@@ -13,11 +13,16 @@ Bu depo, ağ güvenliğinin temel taşı olan **Güvenlik Duvarı (Firewall)** t
 * [Çalışma Prensipleri](#çalışma-prensipleri)
 * [Güvenlik Duvarı Türleri](#güvenlik-duvarı-türleri)
 * [Modern Teknolojiler (NGFW & WAF)](#modern-teknolojiler)
+* [OSI Modeli ve Firewall Katmanları](#osi-modeli-ve-firewall-katmanları)
+* [Iptables Derin Dalış (Tablolar & Zincirler)](#iptables-derin-dalış)
+* [Stateful vs. Stateless Filtering](#stateful-vs-stateless-filtering)
 * [Pratik Senaryolar & Iptables](#pratik-senaryolar)
 * [Lab: Uygulamalı Senaryo (Host-Based)](#lab-uygulamalı-senaryo)
 * [Lab: Docker Ortamı (Network-Based)](#lab-docker-ortamı)
 * [İleri Seviye Konseptler (NAT & DOS)](#i̇leri-seviye-konseptler)
 * [Modern Alternatif: NFTables](#modern-alternatif-nftables)
+* [Ağ Mimarileri ve Güvenlik Duvarı](#ağ-mimarileri-ve-güvenlik-duvarı)
+* [En İyi Uygulamalar (Best Practices)](#en-i̇yi-uygulamalar)
 
 ---
 
@@ -46,6 +51,52 @@ graph TD
 
 ---
 
+## 🌐 OSI Modeli ve Firewall Katmanları
+
+Güvenlik duvarları, OSI modelinin farklı katmanlarında veri paketlerini inceleyerek karar verirler.
+
+| OSI Katmanı | Firewall Türü | İnceleme Birimi | Örnek |
+| :--- | :--- | :--- | :--- |
+| **L3 (Ağ)** | Packet Filter | IP Başlığı | Kaynak/Hedef IP Engelleme |
+| **L4 (Taşıma)** | Circuit-Level | TCP/UDP Portu | Port 80 Erişimi |
+| **L7 (Uygulama)** | WAF / NGFW | Veri İçeriği | SQL Injection Engelleme |
+
+---
+
+## 🧩 Iptables Derin Dalış
+
+Iptables, paketleri yönetmek için **Tablolar (Tables)** ve **Zincirler (Chains)** kullanır.
+
+### Tablolar
+1.  **Filter:** Varsayılan tablo. Paketlerin geçişine karar verir.
+2.  **NAT:** IP/Port çevrimi işlemleri için kullanılır.
+3.  **Mangle:** Paket başlıklarını değiştirmek (TTL, TOS vb.) içindir.
+
+### Bir Paketin Yaşam Döngüsü
+```mermaid
+graph LR
+    P[Paket Girişi] --> PR[PREROUTING]
+    PR --> RD{Yönlendirme Kararı}
+    RD -->|Yerel Süreç| IN[INPUT]
+    RD -->|Dışarıya| FW[FORWARD]
+    IN --> LC[Yerel Uygulama]
+    LC --> OU[OUTPUT]
+    FW --> PO[POSTROUTING]
+    OU --> PO
+    PO --> EX[Paket Çıkışı]
+```
+
+---
+
+## ⚡ Stateful vs. Stateless Filtering
+
+Modern güvenlik duvarları genellikle **Stateful (Durumsal)** yapıdadır.
+
+- **Stateless (Durumsuz):** Her paketi bağımsız inceler. Bağlantının bağlamını bilmez. Hızlıdır ancak esnek değildir.
+- **Stateful (Durumsal):** `conntrack` modülünü kullanarak bağlantıların durumunu (NEW, ESTABLISHED, RELATED) takip eder. Bir talebe verilen cevabın otomatik geçmesine izin verir.
+
+---
+
 ## 🚀 Temel Komutlar ve Konfigürasyonlar
 
 ### Linux Iptables (Temel Yapı)
@@ -68,7 +119,7 @@ graph TD
 
 ---
 
-## 🔥 Lab: Uygulamalı Senaryo
+## 🔥 Lab: Uygulamalı Senaryo (Host-Based)
 
 ### Senaryo: Web Sunucusu Güvenliği
 Bir web sunucumuz var ve sadece HTTP (80), HTTPS (443) ve SSH (22) bağlantılarına izin vermek istiyoruz. Diğer her şeyi engelleyeceğiz.
@@ -123,7 +174,7 @@ chmod +x labctl.sh
 
 ---
 
-## 🛰️ İleri Seviye Konseptler
+## 🛰️ İleri Seviye Konseptler (NAT & DOS)
 
 Lab ortamındaki `lab/advanced` dizininde bulunan betikler ile daha karmaşık senaryoları test edebilirsiniz.
 
@@ -160,6 +211,32 @@ Kurallarınızın doğru çalışıp çalışmadığını test etmek için merke
 cd lab
 ./labctl.sh test
 ```
+
+---
+
+## 🏗️ Ağ Mimarileri ve Güvenlik Duvarı
+
+Güvenlik duvarının ağdaki konumu, güvenlik seviyesini doğrudan etkiler.
+
+1.  **Perimeter (Çevre) Firewall:** İç ağ ile dış dünyayı ayıran ana kapı.
+2.  **Internal Firewall:** İç ağdaki farklı departmanları (örn: İK ve AR-GE) izole etmek için kullanılır.
+3.  **DMZ (Demilitarized Zone):** Web sunucusu gibi dışa açık servislerin, iç ağdan izole edildiği "tampon bölge".
+
+```mermaid
+graph TD
+    A[İnternet] --- B[Firewall]
+    B --- C[İç Ağ]
+    B --- D[DMZ - Web Sunucusu]
+```
+
+---
+
+## 🛡️ En İyi Uygulamalar (Best Practices)
+
+1.  **Varsayılan Politika REDDET (DROP):** Her şeye izin verip bazılarını yasaklamak yerine, her şeyi yasaklayıp sadece gerekli olanlara izin verin.
+2.  **En Az Yetki Prensibi:** Bir kullanıcıya veya servise sadece ihtiyacı olan portları açın.
+3.  **Kural Sıralamasına Dikkat:** Kurallar yukarıdan aşağıya işlenir. En spesifik kuralları en üste, genel kuralları en alta koyun.
+4.  **Loglama:** Kritik paketleri (`-j LOG`) kaydedin ancak storage doluluğunu önlemek için hız sınırlaması kullanın.
 
 ---
 
